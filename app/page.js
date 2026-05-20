@@ -21,7 +21,7 @@ export default function TranslatorApp() {
         "automatic-speech-recognition",
         "onnx-community/whisper-tiny",
         {
-          device: "webgpu",
+          device: "wasm",
           progress_callback: (data) => {
             if (data.status === "progress") setProgress(data.progress || 0);
           },
@@ -46,7 +46,7 @@ export default function TranslatorApp() {
     transcriber.current = await pipeline(
       "automatic-speech-recognition",
       "onnx-community/whisper-tiny",
-      { device: "webgpu" },
+      { device: "wasm" },
     );
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
