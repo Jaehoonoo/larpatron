@@ -44,14 +44,37 @@ export default function TranslatorApp() {
   };
 
   const startListening = async () => {
-    streamRef.current = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        sampleRate: 16000,
-      },
-    });
-    audioContextRef.current = new AudioContext({ sampleRate: 16000 });
+    try {
+      streamRef.current = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 16000,
+        },
+      });
+    } catch (err) {
+      if (
+        err.name === "NotAllowedError" ||
+        err.name === "PermissionDeniedError"
+      ) {
+        setStatus(
+          "Error: Microphone permission denied. Go to Settings → Safari → Microphone and allow access.",
+        );
+      } else if (err.name === "NotFoundError") {
+        setStatus("Error: No microphone found on this device.");
+      } else {
+        setStatus(`Error (mic): ${err.name} — ${err.message}`);
+      }
+      return;
+    }
+
+    try {
+      audioContextRef.current = new AudioContext({ sampleRate: 16000 });
+    } catch (err) {
+      setStatus(`Error (AudioContext): ${err.message}`);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      return;
+    }
     setListening(true);
     setStatus("Listening...");
     setLines([]);
@@ -87,6 +110,7 @@ export default function TranslatorApp() {
           }
         } catch (err) {
           console.error("Chunk processing failed:", err);
+          setStatus(`Error (processing): ${err.name} — ${err.message}`);
         } finally {
           isProcessing.current = false;
         }
